@@ -1,0 +1,31 @@
+services:
+  postgres_db: # postgres db service , name can be anything 
+    image: postgres:alpine
+
+    container_name: test-postgres
+
+    environment:
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: admin
+      POSTGRES_DB: test_db
+
+    ports:
+     - "5432:5432" ## your machine : container port
+
+    volumes:
+      - pg_data:/var/lib/postgresql  # postgres_data: taken from the volumes below and the path next to it is the actual path where postgres stores the db data.
+
+    # app:
+    # build: .
+    # ports:
+    #   - "5000:5000"
+    # depends_on:
+    #   - db
+    #   - redis
+    # environment:
+    #   - FLASK_ENV=development
+    #   - DATABASE_URL=postgresql://postgres:password@db:5432/mydb
+    #   - REDIS_URL=redis://redis:6379/0
+
+volumes: # creates a named volume called postgres data
+  pg_data:
