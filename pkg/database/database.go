@@ -9,7 +9,9 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
-func NewPostgresPool(cfg config.DBConfig) (*pgxpool.Pool, error) {
+// make dsn -> generate poolConfig using dsn, write context for timeout, generate pool with ctx and poolConfig, headthCheck using Ping() and close the connection if any err -> return pool
+
+func NewPostgresPool(cfg config.DBConfig) (*pgxpool.Pool, error) { // config.DBConfig -> first config is the package name and the second one is the struct
 	dsn := fmt.Sprintf(
 		"host=%s port=%s user=%s password=%s dbname=%s sslmode=%s",
 		cfg.Host,
@@ -45,6 +47,7 @@ func NewPostgresPool(cfg config.DBConfig) (*pgxpool.Pool, error) {
 		return nil, err
 	}
 
+	//verify connectivity
 	if err := pool.Ping(ctx); err != nil {
 		pool.Close()
 		return nil, err

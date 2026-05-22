@@ -6,7 +6,12 @@ import (
 	"context"
 
 	"github.com/gin-gonic/gin"
+	"github.com/jackc/pgx/v5/pgxpool"
 )
+
+type App Struct {
+	DB *pgxpool.Pool
+}
 
 func main() {
 
@@ -14,6 +19,11 @@ func main() {
 
 	config := config.LoadConfig()
 
+	if err := database.RunMigrations(config.DB); err != nil {
+		panic("failed to migrate db")
+	}
+
+	//setup database Connection Pool
 	db, err := database.NewPostgresPool(config.DB)
 
 	if err != nil {
@@ -25,15 +35,21 @@ func main() {
 		panic("error in ping")
 	}
 
-	router.GET("/fetch", addSomething)
-	router.POST("/posting", postSomething)
+	queries := database.New()
+
+	app := &App{
+		DB: pool
+	}
+
+	router.GET("/fetch", app.getSomething)
+	router.POST("/posting", app.postSomething)
 
 	router.Run(":8080")
 }
 
-func addSomething(c *gin.Context) {
+func (app *App)addSomething(c *gin.Context) {
 
-}
+}	
 func postSomething(c *gin.Context) {
 
 }
