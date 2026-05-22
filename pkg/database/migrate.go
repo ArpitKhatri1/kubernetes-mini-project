@@ -13,7 +13,7 @@ import (
 func RunMigrations(cfg config.DBConfig) error {
 	databaseURL := fmt.Sprintf("postgres://%s:%s@%s:%s/%s?sslmode=%s", cfg.User, cfg.Password, cfg.Host, cfg.Port, cfg.Name, cfg.SSLMode)
 	m, err := migrate.New(
-		"file://pkg/database/migrations",
+		"file://pkg/sqlc/migrations",
 		databaseURL,
 	)
 

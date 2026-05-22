@@ -8,7 +8,8 @@ import (
 )
 
 type Config struct {
-	DB DBConfig
+	Server ServerConfig
+	DB     DBConfig
 }
 
 type DBConfig struct {
@@ -19,6 +20,9 @@ type DBConfig struct {
 	Port     string
 	Host     string
 }
+type ServerConfig struct {
+	Port string
+}
 
 // panic is used for unrecoverable errors
 func LoadConfig() *Config {
@@ -26,6 +30,9 @@ func LoadConfig() *Config {
 
 	return &Config{
 		// creating a struct using its [name]{fields:values}
+		Server: ServerConfig{
+			Port: "8080",
+		},
 		DB: DBConfig{
 			Host:     getEnv("DB_HOST", "localhost"),
 			Port:     getEnv("DB_PORT", "5432"),

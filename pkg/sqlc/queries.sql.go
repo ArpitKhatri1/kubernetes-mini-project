@@ -3,11 +3,41 @@
 //   sqlc v1.31.1
 // source: queries.sql
 
-package database
+package sqlc
 
 import (
 	"context"
 )
+
+const addUser = `-- name: AddUser :one
+INSERT INTO users(
+    name,email
+) VALUES(
+    $1,$2
+)
+RETURNING id, name, email, age, is_active, created_at, updated_at, metadata
+`
+
+type AddUserParams struct {
+	Name  string
+	Email string
+}
+
+func (q *Queries) AddUser(ctx context.Context, arg AddUserParams) (User, error) {
+	row := q.db.QueryRow(ctx, addUser, arg.Name, arg.Email)
+	var i User
+	err := row.Scan(
+		&i.ID,
+		&i.Name,
+		&i.Email,
+		&i.Age,
+		&i.IsActive,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+		&i.Metadata,
+	)
+	return i, err
+}
 
 const getAllUser = `-- name: GetAllUser :many
 SELECT id, name, email, age, is_active, created_at, updated_at, metadata FROM users

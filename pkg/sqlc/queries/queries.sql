@@ -13,3 +13,11 @@ SELECT * FROM users;
 UPDATE users
 SET name = $2
 WHERE email = $1;
+
+-- name: AddUser :one
+INSERT INTO users(
+    name,email
+) VALUES(
+    $1,$2
+)
+RETURNING *;

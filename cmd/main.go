@@ -2,54 +2,100 @@ package main
 
 import (
 	"app/pkg/config"
-	"app/pkg/database"
+	"app/pkg/routes"
 	"context"
+	"fmt"
+	"log"
+	"net/http"
+	"os"
+	"os/signal"
+	"syscall"
+	"time"
+
+	"app/pkg/app"
 
 	"github.com/gin-gonic/gin"
-	"github.com/jackc/pgx/v5/pgxpool"
 )
-
-type App Struct {
-	DB *pgxpool.Pool
-}
 
 func main() {
 
-	router := gin.Default()
-
 	config := config.LoadConfig()
+	// ------------------------------------------------
+	// Initialize application dependencies
+	// ------------------------------------------------
 
-	if err := database.RunMigrations(config.DB); err != nil {
-		panic("failed to migrate db")
-	}
+	app, err := app.NewApp(config)
 
-	//setup database Connection Pool
-	db, err := database.NewPostgresPool(config.DB)
+	defer app.Db.Close()
 
 	if err != nil {
-		panic("Error starting up new DB Pool")
+		log.Fatal(err)
 	}
-	defer db.Close()
+	// ------------------------------------------------
+	// Create gin router
+	// ------------------------------------------------
+	router := gin.New()
 
-	if err := db.Ping(context.Background()); err != nil {
-		panic("error in ping")
+	// middleware
+	router.Use(gin.Logger())
+	router.Use(gin.Recovery())
+	// ------------------------------------------------
+	// Register application routes
+	// ------------------------------------------------
+
+	routes.RegisterRoutes(router, app)
+
+    // Debug: list registered routes so we can verify paths/methods
+    for _, r := range router.Routes() {
+        log.Printf("registered route: %s %s", r.Method, r.Path)
+    }
+
+	// ------------------------------------------------
+	// Custom http server with read and write timeouts
+	// ------------------------------------------------
+
+	s := &http.Server{
+		Addr:         fmt.Sprintf(":%s", config.Server.Port),
+		Handler:      router,
+		ReadTimeout:  10 * time.Second,
+		WriteTimeout: 10 * time.Second,
 	}
 
-	queries := database.New()
+	go func() {
+		log.Printf("server running on port %s", config.Server.Port)
 
-	app := &App{
-		DB: pool
+		if err := s.ListenAndServe(); err != nil &&
+			err != http.ErrServerClosed {
+			log.Fatal(err)
+		}
+	}()
+
+	// ------------------------------------------------
+	// Graceful shutdown
+	// ------------------------------------------------
+
+	quit := make(chan os.Signal, 1)
+
+	signal.Notify(
+		quit,
+		syscall.SIGINT,
+		syscall.SIGTERM,
+	)
+
+	<-quit
+
+	log.Println("shutting down server...")
+
+	// shutdown must happen in 10 seconds
+	ctx, cancel := context.WithTimeout(
+		context.Background(),
+		10*time.Second,
+	)
+	defer cancel()
+
+	if err := s.Shutdown(ctx); err != nil {
+		log.Fatal(err)
 	}
 
-	router.GET("/fetch", app.getSomething)
-	router.POST("/posting", app.postSomething)
-
-	router.Run(":8080")
-}
-
-func (app *App)addSomething(c *gin.Context) {
-
-}	
-func postSomething(c *gin.Context) {
-
+	log.Println("server exited cleanly")
 }
