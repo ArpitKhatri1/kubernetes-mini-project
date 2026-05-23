@@ -26,11 +26,12 @@ func main() {
 
 	app, err := app.NewApp(config)
 
-	defer app.Db.Close()
-
 	if err != nil {
 		log.Fatal(err)
 	}
+
+	defer app.Db.Close()
+
 	// ------------------------------------------------
 	// Create gin router
 	// ------------------------------------------------
@@ -44,11 +45,6 @@ func main() {
 	// ------------------------------------------------
 
 	routes.RegisterRoutes(router, app)
-
-    // Debug: list registered routes so we can verify paths/methods
-    for _, r := range router.Routes() {
-        log.Printf("registered route: %s %s", r.Method, r.Path)
-    }
 
 	// ------------------------------------------------
 	// Custom http server with read and write timeouts
